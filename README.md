@@ -127,7 +127,7 @@ reshape/
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/reshape-ide.git
+git clone https://github.com/effazrayhan/reshape-ide.git
 cd reshape-ide
 ```
 

@@ -36,3 +36,27 @@ function verifyJWT(string $token): ?array {
 function extractTokenFromHeader(): ?string {
     return JwtLib::extractHeader();
 }
+
+/**
+ * Require authentication - verify JWT token and return payload
+ * @return array The decoded token payload
+ */
+function requireAuth(): array {
+    $token = extractTokenFromHeader();
+    
+    if (!$token) {
+        http_response_code(401);
+        echo json_encode(['success' => false, 'message' => 'Authentication required']);
+        exit;
+    }
+    
+    $payload = verifyJWT($token);
+    
+    if (!$payload) {
+        http_response_code(401);
+        echo json_encode(['success' => false, 'message' => 'Invalid or expired token']);
+        exit;
+    }
+    
+    return $payload;
+}
