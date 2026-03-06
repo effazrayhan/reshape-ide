@@ -4,16 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Logic-Focused Educational IDE - Learn programming through interactive lessons">
-    <title>Logic IDE - Learn Programming</title>
+    <title>Reshape IDE - Shape your Thinking</title>
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
     <div class="container">
         <header class="header">
-            <h1 class="logo">Logic IDE</h1>
+            <h1 class="logo">Reshape IDE</h1>
             <nav class="nav">
                 <button id="lesson-nav" class="nav-btn">Lessons</button>
                 <button id="progress-nav" class="nav-btn">Progress</button>
+                <button id="admin-nav" class="nav-btn" style="display: none;">Admin</button>
+                <div class="auth-buttons" id="auth-buttons">
+                    <button id="login-btn" class="nav-btn auth-btn">Login</button>
+                    <button id="signup-btn" class="nav-btn auth-btn signup-btn">Sign Up</button>
+                    <button id="admin-login-btn" class="nav-btn auth-btn">Admin</button>
+                </div>
+                <div class="user-menu" id="user-menu" style="display: none;">
+                    <span id="username-display"></span>
+                    <button id="logout-btn" class="nav-btn">Logout</button>
+                </div>
             </nav>
         </header>
 
@@ -82,6 +92,116 @@
             <p id="modal-message"></p>
             <div id="modal-score" class="modal-score"></div>
             <button id="modal-next-btn" class="modal-btn">Next Lesson</button>
+        </div>
+    </div>
+
+    <!-- Auth Modal -->
+    <div id="auth-modal" class="modal">
+        <div class="modal-content auth-modal-content">
+            <span class="modal-close auth-modal-close">&times;</span>
+            <div id="login-form-container">
+                <h2>Login</h2>
+                <form id="login-form">
+                    <div class="form-group">
+                        <label for="login-email">Email or Username</label>
+                        <input type="text" id="login-email" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">Password</label>
+                        <input type="password" id="login-password" name="password" required>
+                    </div>
+                    <div id="login-error" class="form-error"></div>
+                    <button type="submit" class="modal-btn">Login</button>
+                </form>
+                <p class="auth-switch">
+                    Don't have an account? <a href="#" id="switch-to-signup">Sign Up</a>
+                </p>
+            </div>
+            <div id="signup-form-container" style="display: none;">
+                <h2>Sign Up</h2>
+                <form id="signup-form">
+                    <div class="form-group">
+                        <label for="signup-username">Username</label>
+                        <input type="text" id="signup-username" name="username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="signup-email">Email</label>
+                        <input type="email" id="signup-email" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="signup-password">Password</label>
+                        <input type="password" id="signup-password" name="password" required minlength="6">
+                    </div>
+                    <div class="form-group">
+                        <label for="signup-confirm-password">Confirm Password</label>
+                        <input type="password" id="signup-confirm-password" name="confirm_password" required>
+                    </div>
+                    <div id="signup-error" class="form-error"></div>
+                    <button type="submit" class="modal-btn">Sign Up</button>
+                </form>
+                <p class="auth-switch">
+                    Already have an account? <a href="#" id="switch-to-login">Login</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Panel -->
+    <div id="admin-panel" class="admin-panel" style="display: none;">
+        <div class="admin-header">
+            <h2>Admin Panel</h2>
+            <button id="close-admin" class="nav-btn">&times;</button>
+        </div>
+        <div class="admin-tabs">
+            <button class="admin-tab active" data-tab="users">Users</button>
+            <button class="admin-tab" data-tab="create-lesson">Create Lesson</button>
+        </div>
+        <div id="admin-users-tab" class="admin-tab-content">
+            <h3>All Users</h3>
+            <div id="users-list" class="users-list"></div>
+        </div>
+        <div id="admin-create-lesson-tab" class="admin-tab-content" style="display: none;">
+            <h3>Create New Lesson</h3>
+            <form id="create-lesson-form">
+                <div class="form-group">
+                    <label>Title</label>
+                    <input type="text" id="lesson-title" required>
+                </div>
+                <div class="form-group">
+                    <label>Difficulty</label>
+                    <select id="lesson-difficulty">
+                        <option value="easy">Easy</option>
+                        <option value="medium">Medium</option>
+                        <option value="hard">Hard</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Description (HTML)</label>
+                    <textarea id="lesson-description" rows="4" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Starter Code</label>
+                    <textarea id="lesson-starter-code" rows="4" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Solution Code</label>
+                    <textarea id="lesson-solution" rows="4" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Points</label>
+                    <input type="number" id="lesson-points" value="100" min="1">
+                </div>
+                <div class="form-group">
+                    <label>Hints (one per line)</label>
+                    <textarea id="lesson-hints" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Test Cases (JSON format)</label>
+                    <textarea id="lesson-test-cases" rows="4" placeholder='[{"input": [1, 2], "expected": 3}]'></textarea>
+                </div>
+                <button type="submit" class="modal-btn">Create Lesson</button>
+            </form>
+            <div id="create-lesson-result"></div>
         </div>
     </div>
 

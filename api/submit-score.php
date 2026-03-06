@@ -8,7 +8,7 @@
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
+header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
 // Handle preflight requests
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -16,8 +16,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
-// Include database helper
+// Include database and JWT helpers
 require_once __DIR__ . '/lib/db.php';
+require_once __DIR__ . '/lib/jwt.php';
 
 // Get request body
 $input = json_decode(file_get_contents('php://input'), true);
@@ -34,9 +35,36 @@ if (!isset($input['lessonId']) || !isset($input['score'])) {
 $lessonId = (int)$input['lessonId'];
 $score = (int)$input['score'];
 $hintsUsed = $input['hintsUsed'] ?? 0;
+$anonymousUserId = $input['anonymousUserId'] ?? null;
 
-// Get user ID (in production, this would come from authentication)
-$userId = getUserId();
+// Try to get authenticated user from JWT
+$userId = null;
+$payload = null;
+
+$token = extractTokenFromHeader();
+if ($token) {
+    $payload = verifyJWT($token);
+    if ($payload && isset($payload['id'])) {
+        $userId = (string)$payload['id'];
+    }
+}
+
+// Fallback to anonymous user if not authenticated
+if (!$userId) {
+    // Try to use provided anonymous user ID
+    if ($anonymousUserId) {
+        $userId = $anonymousUserId;
+    } else {
+        // Try session-based anonymous ID for backward compatibility
+        if (!isset($_SESSION)) {
+            session_start();
+        }
+        if (!isset($_SESSION['anonymous_user_id'])) {
+            $_SESSION['anonymous_user_id'] = 'anon_' . uniqid();
+        }
+        $userId = $_SESSION['anonymous_user_id'];
+    }
+}
 
 // Validate score
 if ($score < 0) {
@@ -69,6 +97,8 @@ try {
     $checkStmt->execute([$userId, $lessonId]);
     $existingProgress = $checkStmt->fetch();
     
+    $isNewHighScore = false;
+    
     if ($existingProgress) {
         // Update only if new score is higher
         if ($score > $existingProgress['score']) {
@@ -79,12 +109,13 @@ try {
             ");
             
             $updateStmt->execute([$score, $hintsUsed, $existingProgress['id']]);
+            $isNewHighScore = true;
         }
         
         echo json_encode([
             'success' => true,
             'message' => 'Progress updated',
-            'isNewHighScore' => $score > $existingProgress['score']
+            'isNewHighScore' => $isNewHighScore
         ]);
     } else {
         // Insert new progress
@@ -102,26 +133,27 @@ try {
         ]);
     }
     
+    // Update user_scores summary if authenticated
+    if ($payload && isset($payload['id'])) {
+        try {
+            // Update total score
+            $scoreStmt = $pdo->prepare("
+                INSERT INTO user_scores (user_id, total_score, lessons_completed, last_activity_at)
+                VALUES (?, ?, 1, NOW())
+                ON DUPLICATE KEY UPDATE 
+                    total_score = total_score + ?,
+                    lessons_completed = lessons_completed + 1,
+                    last_activity_at = NOW()
+            ");
+            $scoreStmt->execute([$userId, $score, $score]);
+        } catch (PDOException $e) {
+            // Table might not exist, ignore
+        }
+    }
+    
 } catch (Exception $e) {
     echo json_encode([
         'success' => false,
         'error' => 'Failed to save score: ' . $e->getMessage()
     ]);
 }
-
-/**
- * Get or create user ID
- * In production, this would come from authentication
- */
-function getUserId() {
-    // Try to get from session or create a persistent ID
-    if (!isset($_SESSION['user_id'])) {
-        // Create a simple anonymous user ID
-        $_SESSION['user_id'] = 'user_' . uniqid();
-    }
-    
-    return $_SESSION['user_id'];
-}
-
-// Start session for user tracking
-session_start();

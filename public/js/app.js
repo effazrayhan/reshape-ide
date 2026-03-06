@@ -11,6 +11,10 @@ class LogicIDE {
         this.lessons = [];
         this.completedLessons = new Set();
         
+        // Authentication state
+        this.currentUser = null;
+        this.token = localStorage.getItem('jwt_token');
+        
         // Initialize components
         this.editor = null;
         this.hintEngine = null;
@@ -31,7 +35,26 @@ class LogicIDE {
             runBtn: document.getElementById('run-btn'),
             resetBtn: document.getElementById('reset-btn'),
             clearOutputBtn: document.getElementById('clear-output'),
-            modalClose: document.querySelector('.modal-close')
+            modalClose: document.querySelector('.modal-close'),
+            // Auth elements
+            authButtons: document.getElementById('auth-buttons'),
+            userMenu: document.getElementById('user-menu'),
+            usernameDisplay: document.getElementById('username-display'),
+            loginBtn: document.getElementById('login-btn'),
+            signupBtn: document.getElementById('signup-btn'),
+            adminLoginBtn: document.getElementById('admin-login-btn'),
+            adminNav: document.getElementById('admin-nav'),
+            logoutBtn: document.getElementById('logout-btn'),
+            authModal: document.getElementById('auth-modal'),
+            authModalClose: document.querySelector('.auth-modal-close'),
+            loginFormContainer: document.getElementById('login-form-container'),
+            signupFormContainer: document.getElementById('signup-form-container'),
+            loginForm: document.getElementById('login-form'),
+            signupForm: document.getElementById('signup-form'),
+            switchToSignup: document.getElementById('switch-to-signup'),
+            switchToLogin: document.getElementById('switch-to-login'),
+            loginError: document.getElementById('login-error'),
+            signupError: document.getElementById('signup-error')
         };
         
         this.init();
@@ -56,8 +79,469 @@ class LogicIDE {
         // Set up event listeners
         this.setupEventListeners();
         
+        // Setup authentication
+        this.setupAuth();
+        
         // Load initial data
         this.loadLessons();
+    }
+
+    setupAuth() {
+        // Check if user is already logged in
+        if (this.token) {
+            this.fetchCurrentUser();
+            // Load progress will be called after user is fetched
+        }
+        
+        // Login button
+        if (this.elements.loginBtn) {
+            this.elements.loginBtn.addEventListener('click', () => this.showAuthModal('login'));
+        }
+        
+        // Signup button
+        if (this.elements.signupBtn) {
+            this.elements.signupBtn.addEventListener('click', () => this.showAuthModal('signup'));
+        }
+        
+        // Admin login button
+        if (this.elements.adminLoginBtn) {
+            this.elements.adminLoginBtn.addEventListener('click', () => this.showAdminLogin());
+        }
+        
+        // Admin nav button
+        if (this.elements.adminNav) {
+            this.elements.adminNav.addEventListener('click', () => this.showAdminPanel());
+        }
+        
+        // Logout button
+        if (this.elements.logoutBtn) {
+            this.elements.logoutBtn.addEventListener('click', () => this.logout());
+        }
+        
+        // Auth modal close
+        if (this.elements.authModalClose) {
+            this.elements.authModalClose.addEventListener('click', () => this.closeAuthModal());
+        }
+        
+        // Close auth modal on outside click
+        if (this.elements.authModal) {
+            this.elements.authModal.addEventListener('click', (e) => {
+                if (e.target === this.elements.authModal) {
+                    this.closeAuthModal();
+                }
+            });
+        }
+        
+        // Switch to signup
+        if (this.elements.switchToSignup) {
+            this.elements.switchToSignup.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.showAuthForm('signup');
+            });
+        }
+        
+        // Switch to login
+        if (this.elements.switchToLogin) {
+            this.elements.switchToLogin.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.showAuthForm('login');
+            });
+        }
+        
+        // Login form submit
+        if (this.elements.loginForm) {
+            this.elements.loginForm.addEventListener('submit', (e) => this.handleLogin(e));
+        }
+        
+        // Signup form submit
+        if (this.elements.signupForm) {
+            this.elements.signupForm.addEventListener('submit', (e) => this.handleSignup(e));
+        }
+    }
+
+    showAuthModal(type) {
+        if (!this.elements.authModal) return;
+        this.showAuthForm(type);
+        this.elements.authModal.classList.add('show');
+    }
+
+    closeAuthModal() {
+        if (!this.elements.authModal) return;
+        this.elements.authModal.classList.remove('show');
+        // Clear forms and errors
+        if (this.elements.loginForm) this.elements.loginForm.reset();
+        if (this.elements.signupForm) this.elements.signupForm.reset();
+        if (this.elements.loginError) this.elements.loginError.textContent = '';
+        if (this.elements.signupError) this.elements.signupError.textContent = '';
+    }
+
+    showAuthForm(type) {
+        if (!this.elements.loginFormContainer || !this.elements.signupFormContainer) return;
+        
+        if (type === 'signup') {
+            this.elements.loginFormContainer.style.display = 'none';
+            this.elements.signupFormContainer.style.display = 'block';
+        } else {
+            this.elements.signupFormContainer.style.display = 'none';
+            this.elements.loginFormContainer.style.display = 'block';
+        }
+    }
+
+    async handleLogin(e) {
+        e.preventDefault();
+        
+        const email = document.getElementById('login-email')?.value;
+        const password = document.getElementById('login-password')?.value;
+        
+        if (!email || !password) return;
+        
+        try {
+            const response = await fetch('/api/login.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                this.token = data.token;
+                this.currentUser = data.user;
+                localStorage.setItem('jwt_token', this.token);
+                this.updateAuthUI();
+                this.closeAuthModal();
+                // Merge anonymous progress to user account
+                await this.mergeAnonymousProgress();
+                // Load user progress after login
+                await this.loadProgress();
+            } else {
+                if (this.elements.loginError) {
+                    this.elements.loginError.textContent = data.message || 'Login failed';
+                }
+            }
+        } catch (error) {
+            console.error('Login error:', error);
+            if (this.elements.loginError) {
+                this.elements.loginError.textContent = 'Login failed. Please try again.';
+            }
+        }
+    }
+
+    async mergeAnonymousProgress() {
+        try {
+            // Get anonymous session ID
+            const anonId = this.getAnonymousUserId();
+            if (!anonId) return;
+            
+            // Call merge endpoint
+            await fetch('/api/merge-progress.php', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${this.token}`
+                },
+                body: JSON.stringify({ anonymousUserId: anonId })
+            });
+        } catch (error) {
+            console.error('Merge progress error:', error);
+        }
+    }
+
+    getAnonymousUserId() {
+        // Get from sessionStorage or create new one
+        let anonId = sessionStorage.getItem('anonymous_user_id');
+        if (!anonId) {
+            anonId = 'anon_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            sessionStorage.setItem('anonymous_user_id', anonId);
+        }
+        return anonId;
+    }
+
+    async handleSignup(e) {
+        e.preventDefault();
+        
+        const username = document.getElementById('signup-username')?.value;
+        const email = document.getElementById('signup-email')?.value;
+        const password = document.getElementById('signup-password')?.value;
+        const confirmPassword = document.getElementById('signup-confirm-password')?.value;
+        
+        if (!username || !email || !password) return;
+        
+        if (password !== confirmPassword) {
+            if (this.elements.signupError) {
+                this.elements.signupError.textContent = 'Passwords do not match';
+            }
+            return;
+        }
+        
+        try {
+            const response = await fetch('/api/signup.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, email, password })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                this.token = data.token;
+                this.currentUser = data.user;
+                localStorage.setItem('jwt_token', this.token);
+                this.updateAuthUI();
+                this.closeAuthModal();
+                // Load user progress after signup
+                await this.loadProgress();
+            } else {
+                if (this.elements.signupError) {
+                    this.elements.signupError.textContent = data.message || 'Signup failed';
+                }
+            }
+        } catch (error) {
+            console.error('Signup error:', error);
+            if (this.elements.signupError) {
+                this.elements.signupError.textContent = 'Signup failed. Please try again.';
+            }
+        }
+    }
+
+    async fetchCurrentUser() {
+        try {
+            const response = await fetch('/api/user.php', {
+                headers: {
+                    'Authorization': `Bearer ${this.token}`
+                }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    this.currentUser = data.user;
+                    this.updateAuthUI();
+                    // Load user progress
+                    await this.loadProgress();
+                } else {
+                    // Token invalid, clear it
+                    this.logout();
+                }
+            } else {
+                this.logout();
+            }
+        } catch (error) {
+            console.error('Fetch user error:', error);
+            // Continue without auth on error
+        }
+    }
+
+    logout() {
+        this.token = null;
+        this.currentUser = null;
+        this.isAdmin = false;
+        localStorage.removeItem('jwt_token');
+        this.updateAuthUI();
+    }
+
+    // Admin methods
+    async showAdminLogin() {
+        const email = prompt('Admin Email:');
+        if (!email) return;
+        
+        const password = prompt('Admin Password:');
+        if (!password) return;
+        
+        try {
+            const response = await fetch('/api/admin-login.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                this.token = data.token;
+                this.currentUser = data.user;
+                this.isAdmin = true;
+                localStorage.setItem('jwt_token', this.token);
+                this.updateAuthUI();
+                this.showAdminPanel();
+            } else {
+                alert(data.message || 'Admin login failed');
+            }
+        } catch (error) {
+            console.error('Admin login error:', error);
+            alert('Admin login failed');
+        }
+    }
+
+    async showAdminPanel() {
+        if (!this.isAdmin) {
+            alert('Please login as admin first');
+            return;
+        }
+        
+        const panel = document.getElementById('admin-panel');
+        if (panel) {
+            panel.style.display = 'block';
+            this.loadAdminUsers();
+        }
+        
+        // Setup close button
+        const closeBtn = document.getElementById('close-admin');
+        if (closeBtn) {
+            closeBtn.onclick = () => {
+                panel.style.display = 'none';
+            };
+        }
+        
+        // Setup tabs
+        const tabs = document.querySelectorAll('.admin-tab');
+        tabs.forEach(tab => {
+            tab.onclick = () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                const tabName = tab.dataset.tab;
+                document.getElementById('admin-users-tab').style.display = tabName === 'users' ? 'block' : 'none';
+                document.getElementById('admin-create-lesson-tab').style.display = tabName === 'create-lesson' ? 'block' : 'none';
+                
+                if (tabName === 'users') {
+                    this.loadAdminUsers();
+                }
+            };
+        });
+        
+        // Setup create lesson form
+        const form = document.getElementById('create-lesson-form');
+        if (form) {
+            form.onsubmit = async (e) => {
+                e.preventDefault();
+                await this.createLesson();
+            };
+        }
+    }
+
+    async loadAdminUsers() {
+        try {
+            const response = await this.apiRequest('/api/admin-users.php');
+            const data = await response.json();
+            
+            if (data.success) {
+                this.renderAdminUsers(data.users);
+            }
+        } catch (error) {
+            console.error('Load admin users error:', error);
+        }
+    }
+
+    renderAdminUsers(users) {
+        const container = document.getElementById('users-list');
+        if (!container) return;
+        
+        container.innerHTML = users.map(user => `
+            <div class="user-card">
+                <div class="user-card-header">
+                    <strong>${user.username}</strong>
+                    <span class="user-card-score">${user.total_score} pts</span>
+                </div>
+                <div class="user-card-email">${user.email}</div>
+                <div class="user-card-progress">
+                    Solved: ${user.lessons_completed} lessons
+                    ${user.solved_problems ? user.solved_problems.map(p => 
+                        '<span class="user-solved-item">' + p.lesson_title + '</span>'
+                    ).join('') : ''}
+                </div>
+            </div>
+        `).join('');
+    }
+
+    async createLesson() {
+        const title = document.getElementById('lesson-title')?.value;
+        const difficulty = document.getElementById('lesson-difficulty')?.value;
+        const description = document.getElementById('lesson-description')?.value;
+        const starterCode = document.getElementById('lesson-starter-code')?.value;
+        const solution = document.getElementById('lesson-solution')?.value;
+        const points = parseInt(document.getElementById('lesson-points')?.value) || 100;
+        const hintsText = document.getElementById('lesson-hints')?.value;
+        const testCasesText = document.getElementById('lesson-test-cases')?.value;
+        
+        const hints = hintsText ? hintsText.split('\n').filter(h => h.trim()) : [];
+        
+        let testCases = [];
+        try {
+            testCases = testCasesText ? JSON.parse(testCasesText) : [];
+        } catch (e) {
+            alert('Invalid test cases JSON format');
+            return;
+        }
+        
+        try {
+            const response = await this.apiRequest('/api/admin-create-lesson.php', {
+                method: 'POST',
+                body: JSON.stringify({
+                    title, difficulty, description, starterCode, solution, points, hints, testCases
+                })
+            });
+            
+            const data = await response.json();
+            
+            const resultDiv = document.getElementById('create-lesson-result');
+            if (data.success) {
+                resultDiv.innerHTML = '<p style="color: green;">' + data.message + '</p>';
+                document.getElementById('create-lesson-form').reset();
+            } else {
+                resultDiv.innerHTML = '<p style="color: red;">' + (data.message || 'Failed') + '</p>';
+            }
+        } catch (error) {
+            console.error('Create lesson error:', error);
+            alert('Failed to create lesson');
+        }
+    }
+
+    updateAuthUI() {
+        if (!this.elements.authButtons || !this.elements.userMenu || !this.elements.usernameDisplay) return;
+        
+        if (this.currentUser) {
+            this.elements.authButtons.style.display = 'none';
+            this.elements.userMenu.style.display = 'flex';
+            this.elements.usernameDisplay.textContent = this.currentUser.username;
+            
+            // Show admin nav if admin
+            if (this.elements.adminNav) {
+                this.elements.adminNav.style.display = this.isAdmin ? 'block' : 'none';
+            }
+        } else {
+            this.elements.authButtons.style.display = 'flex';
+            this.elements.userMenu.style.display = 'none';
+            if (this.elements.adminNav) {
+                this.elements.adminNav.style.display = 'none';
+            }
+        }
+    }
+
+    // Helper method to make authenticated API requests
+    async apiRequest(url, options = {}) {
+        const headers = {
+            'Content-Type': 'application/json',
+            ...options.headers
+        };
+        
+        if (this.token) {
+            headers['Authorization'] = `Bearer ${this.token}`;
+        }
+        
+        return fetch(url, {
+            ...options,
+            headers
+        });
+    }
+
+    // Get user ID for progress (authenticated or anonymous)
+    getProgressUserId() {
+        if (this.currentUser) {
+            return { id: this.currentUser.id, isAuthenticated: true };
+        }
+        // Return anonymous ID from sessionStorage
+        return { id: this.getAnonymousUserId(), isAuthenticated: false };
     }
 
     setupEventListeners() {
@@ -118,122 +602,54 @@ class LogicIDE {
             this.lessons = data.lessons || [];
             this.renderLessonList();
             
+            // Load user progress
+            await this.loadProgress();
+            
             // Select first lesson if available
             if (this.lessons.length > 0) {
                 this.selectLesson(this.lessons[0].id);
             }
         } catch (error) {
             console.error('Error loading lessons:', error);
-            this.showOutput('Error loading lessons. Please try again.', 'error');
-            
-            // Load demo lessons for offline testing
-            this.loadDemoLessons();
+            this.showOutput('Error loading lessons. Please check if the database is set up.', 'error');
         }
     }
 
-    loadDemoLessons() {
-        this.lessons = [
-            {
-                id: 1,
-                title: 'Hello World',
-                difficulty: 'easy',
-                description: '<h3>Your First Program</h3><p>Write a function that returns the string "Hello, World!"</p><pre><code>function hello() {\n    // Your code here\n}</code></pre>',
-                starterCode: 'function hello() {\n    // Return "Hello, World!"\n    \n}',
-                solution: 'function hello() {\n    return "Hello, World!";\n}',
-                hints: [
-                    { id: 1, text: 'Use the return keyword to return a value from a function.' },
-                    { id: 2, text: 'Strings in JavaScript are wrapped in quotes.' },
-                    { id: 3, text: 'The answer is: return "Hello, World!";' }
-                ],
-                testCases: [
-                    { input: '', expected: 'Hello, World!' }
-                ],
-                points: 100
-            },
-            {
-                id: 2,
-                title: 'Sum Two Numbers',
-                difficulty: 'easy',
-                description: '<h3>Adding Numbers</h3><p>Write a function that takes two numbers and returns their sum.</p><pre><code>function sum(a, b) {\n    // Your code here\n}</code></pre>',
-                starterCode: 'function sum(a, b) {\n    // Return a + b\n    \n}',
-                solution: 'function sum(a, b) {\n    return a + b;\n}',
-                hints: [
-                    { id: 1, text: 'You can add two numbers using the + operator.' },
-                    { id: 2, text: 'Make sure to use the return keyword.' },
-                    { id: 3, text: 'The answer is: return a + b;' }
-                ],
-                testCases: [
-                    { input: [2, 3], expected: 5 },
-                    { input: [10, 20], expected: 30 },
-                    { input: [-1, 1], expected: 0 }
-                ],
-                points: 100
-            },
-            {
-                id: 3,
-                title: 'Reverse a String',
-                difficulty: 'medium',
-                description: '<h3>String Reversal</h3><p>Write a function that reverses a string.</p><pre><code>function reverse(str) {\n    // Your code here\n}</code></pre>',
-                starterCode: 'function reverse(str) {\n    // Return the reversed string\n    \n}',
-                solution: 'function reverse(str) {\n    return str.split("").reverse().join("");\n}',
-                hints: [
-                    { id: 1, text: 'You can convert a string to an array using split().' },
-                    { id: 2, text: 'Arrays have a reverse() method.' },
-                    { id: 3, text: 'Use join() to convert the array back to a string.' }
-                ],
-                testCases: [
-                    { input: ['hello'], expected: 'olleh' },
-                    { input: ['JavaScript'], expected: 'tpircSavaJ' },
-                    { input: ['a'], expected: 'a' }
-                ],
-                points: 150
-            },
-            {
-                id: 4,
-                title: 'FizzBuzz',
-                difficulty: 'medium',
-                description: '<h3>The Classic Problem</h3><p>Write a function that takes a number and returns:</p><ul><li>"Fizz" if divisible by 3</li><li>"Buzz" if divisible by 5</li><li>"FizzBuzz" if divisible by both</li><li>The number as a string otherwise</li></ul><pre><code>function fizzBuzz(n) {\n    // Your code here\n}</code></pre>',
-                starterCode: 'function fizzBuzz(n) {\n    // Your code here\n    \n}',
-                solution: 'function fizzBuzz(n) {\n    if (n % 3 === 0 && n % 5 === 0) return "FizzBuzz";\n    if (n % 3 === 0) return "Fizz";\n    if (n % 5 === 0) return "Buzz";\n    return String(n);\n}',
-                hints: [
-                    { id: 1, text: 'Use the modulo operator (%) to check divisibility.' },
-                    { id: 2, text: 'Check for divisibility by both 3 and 5 first.' },
-                    { id: 3, text: 'Use String(n) to convert a number to a string.' }
-                ],
-                testCases: [
-                    { input: [3], expected: 'Fizz' },
-                    { input: [5], expected: 'Buzz' },
-                    { input: [15], expected: 'FizzBuzz' },
-                    { input: [7], expected: '7' }
-                ],
-                points: 200
-            },
-            {
-                id: 5,
-                title: 'Factorial',
-                difficulty: 'hard',
-                description: '<h3>Factorial Calculation</h3><p>Write a function that calculates the factorial of a non-negative integer.</p><pre><code>function factorial(n) {\n    // Your code here\n}</code></pre>',
-                starterCode: 'function factorial(n) {\n    // Return n! (n factorial)\n    \n}',
-                solution: 'function factorial(n) {\n    if (n <= 1) return 1;\n    return n * factorial(n - 1);\n}',
-                hints: [
-                    { id: 1, text: 'Factorial of 0 or 1 is 1.' },
-                    { id: 2, text: 'You can use recursion: n! = n * (n-1)!' },
-                    { id: 3, text: 'Base case: if (n <= 1) return 1;' }
-                ],
-                testCases: [
-                    { input: [0], expected: 1 },
-                    { input: [1], expected: 1 },
-                    { input: [5], expected: 120 },
-                    { input: [10], expected: 3628800 }
-                ],
-                points: 250
+    async loadProgress() {
+        try {
+            // If logged in, load authenticated progress
+            if (this.currentUser) {
+                const response = await this.apiRequest('/api/progress.php');
+                const data = await response.json();
+                
+                if (data.success && data.progress) {
+                    for (const [lessonId, progress] of Object.entries(data.progress)) {
+                        if (progress.score > 0) {
+                            this.completedLessons.add(parseInt(lessonId));
+                        }
+                    }
+                }
+            } else {
+                // Load anonymous progress from session
+                const anonId = this.getAnonymousUserId();
+                const response = await fetch('/api/progress.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ anonymousUserId: anonId })
+                });
+                const data = await response.json();
+                
+                if (data.success && data.progress) {
+                    for (const [lessonId, progress] of Object.entries(data.progress)) {
+                        if (progress.score > 0) {
+                            this.completedLessons.add(parseInt(lessonId));
+                        }
+                    }
+                }
             }
-        ];
-        
-        this.renderLessonList();
-        
-        if (this.lessons.length > 0) {
-            this.selectLesson(this.lessons[0].id);
+            this.renderLessonList();
+        } catch (error) {
+            console.error('Error loading progress:', error);
         }
     }
 
@@ -314,11 +730,8 @@ class LogicIDE {
         
         try {
             // Validate code against server
-            const response = await fetch('/api/validate.php', {
+            const response = await this.apiRequest('/api/validate.php', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
                 body: JSON.stringify({
                     code: code,
                     lessonId: this.currentLesson.id,
@@ -432,15 +845,15 @@ class LogicIDE {
 
     async submitScore(lessonId, score) {
         try {
-            await fetch('/api/submit-score.php', {
+            const userInfo = this.getProgressUserId();
+            
+            await this.apiRequest('/api/submit-score.php', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
                 body: JSON.stringify({
                     lessonId: lessonId,
                     score: score,
-                    hintsUsed: this.hintEngine ? this.hintEngine.getHintsUsed() : 0
+                    hintsUsed: this.hintEngine ? this.hintEngine.getHintsUsed() : 0,
+                    anonymousUserId: userInfo.isAuthenticated ? null : userInfo.id
                 })
             });
         } catch (error) {
