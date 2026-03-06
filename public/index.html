@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Logic-Focused Educational IDE - Learn programming through interactive lessons">
+    <title>Logic IDE - Learn Programming</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1 class="logo">Logic IDE</h1>
+            <nav class="nav">
+                <button id="lesson-nav" class="nav-btn">Lessons</button>
+                <button id="progress-nav" class="nav-btn">Progress</button>
+            </nav>
+        </header>
+
+        <main class="main-content">
+            <aside class="sidebar">
+                <div class="lesson-list" id="lesson-list">
+                    <h3>Lessons</h3>
+                    <ul id="lessons-container">
+                        <!-- Lessons will be loaded here -->
+                    </ul>
+                </div>
+            </aside>
+
+            <section class="editor-section">
+                <div class="lesson-header">
+                    <h2 id="lesson-title">Select a Lesson</h2>
+                    <span id="lesson-difficulty" class="difficulty-badge"></span>
+                </div>
+
+                <div class="problem-description" id="problem-description">
+                    <p>Choose a lesson from the sidebar to get started.</p>
+                </div>
+
+                <div class="editor-container">
+                    <div class="editor-header">
+                        <span class="editor-label">Code Editor</span>
+                        <div class="editor-actions">
+                            <button id="run-btn" class="action-btn run-btn">Run</button>
+                            <button id="reset-btn" class="action-btn reset-btn">Reset</button>
+                        </div>
+                    </div>
+                    <textarea id="code-editor" class="code-editor" spellcheck="false" placeholder="// Write your code here"></textarea>
+                </div>
+
+                <div class="output-container">
+                    <div class="output-header">
+                        <span>Output</span>
+                        <button id="clear-output" class="clear-btn">Clear</button>
+                    </div>
+                    <div id="output" class="output"></div>
+                </div>
+            </section>
+
+            <aside class="hint-panel">
+                <h3>Hints</h3>
+                <div id="hints-container" class="hints-container">
+                    <p class="hint-placeholder">Complete the lesson to earn hints.</p>
+                </div>
+                <button id="get-hint-btn" class="hint-btn" disabled>Get Hint</button>
+
+                <div class="score-section">
+                    <h3>Score</h3>
+                    <div id="score-display" class="score-display">
+                        <span class="score-value">0</span>
+                        <span class="score-label">points</span>
+                    </div>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close">&times;</span>
+            <h2 id="modal-title">Lesson Complete!</h2>
+            <p id="modal-message"></p>
+            <div id="modal-score" class="modal-score"></div>
+            <button id="modal-next-btn" class="modal-btn">Next Lesson</button>
+        </div>
+    </div>
+
+    <script src="/js/editor.js"></script>
+    <script src="/js/hint-engine.js"></script>
+    <script src="/js/app.js"></script>
+</body>
+</html>
