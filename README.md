@@ -170,23 +170,8 @@ Create the database and import the schema:
 mysql -u root -p -e "CREATE DATABASE reshape_ide;"
 
 # Import tables
-mysql -u root -p reshape_ide < sql/init_tables.sql
-
-# Import sample lessons (optional)
-mysql -u root -p reshape_ide < sql/init_lessons_hints.sql
+sh init_sql.sh
 ```
-
-### 4. Run Setup Script (Optional)
-
-```bash
-# Linux/Mac
-chmod +x setup.sh
-./setup.sh
-
-# Windows
-setup.bat
-```
-
 ---
 
 ## 🚀 Running the Application
@@ -198,45 +183,16 @@ setup.bat
 ./run.sh
 
 # Or manually
-php -S localhost:3699 router.php
+php -S localhost:370 router.php
 ```
 
-Then open [http://localhost:3699](http://localhost:3699) in your browser.
+Then open [http://localhost:3700](http://localhost:3700) in your browser.
 
 ### With MySQL
 
 Ensure MySQL is running and accessible with the credentials in your `.env.local`.
 
 ---
-
-## ☁️ Deployment
-
-### Vercel (Recommended)
-
-1. Install Vercel CLI:
-   ```bash
-   npm install -g vercel
-   ```
-
-2. Deploy:
-   ```bash
-   vercel
-   ```
-
-3. Set environment variables in Vercel dashboard:
-   - `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASS`
-   - `JWT_SECRET`, `JWT_EXPIRY`
-   - `ADMIN_EMAIL`, `ADMIN_PASSWORD`
-
-### Traditional Web Hosting
-
-1. Upload files to your web server
-2. Configure your web server (Apache/Nginx) to point to `public/`
-3. Ensure the `api/` directory is accessible via `/api/` route
-4. Set up environment variables
-
----
-
 ## 🔌 API Endpoints
 
 ### Authentication
@@ -347,5 +303,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🙏 Acknowledgments
 
 - Built with PHP and Vanilla JavaScript
-- Designed for educational purposes
+- Designed for educational purposes (jk I need marks :`)
 - Inspired by platforms like LeetCode and Codecademy
