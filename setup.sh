@@ -1,9 +1,4 @@
 #!/bin/bash
-
-###############################################################################
-# Logic IDE Setup Script - FIXED VERSION 2026
-###############################################################################
-
 set -e
 
 # Colors for output
@@ -39,25 +34,6 @@ case "$OS_TYPE" in
 esac
 
 echo -e "${YELLOW}Detected OS: $OS${NC}"
-
-# 1. Check for PHP
-# if ! command -v php &> /dev/null; then
-#     echo -e "${RED}Error: PHP not found!${NC}"
-#     exit 1
-# fi
-# echo -e "${GREEN}✓ PHP found: $(php -r 'echo PHP_VERSION;')${NC}"
-
-# 2. Check for MySQL
-# MYSQL_CMD=""
-# MYSQL_AVAILABLE=false
-# for cmd in mysql mysql.exe; do
-#     if command -v $cmd &> /dev/null; then
-#         MYSQL_CMD=$cmd
-#         MYSQL_AVAILABLE=true
-#         break
-#     fi
-# done
-
 # 3. Handle .env.local
 if [ ! -f ".env.local" ]; then
     if [ -f ".env.example" ]; then
@@ -113,7 +89,7 @@ EOF
 fi
 
 echo -e "${GREEN}Setup complete! Starting server...${NC}"
-echo -e "Visit: ${BLUE}http://localhost:3699${NC}"
+echo -e "Visit: ${BLUE}http://localhost:3700${NC}"
 
 # Start Server
-php -S localhost:3699 router.php
+php -S localhost:3700 router.php

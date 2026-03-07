@@ -164,8 +164,8 @@
             <h3>Create New Lesson</h3>
             <form id="create-lesson-form">
                 <div class="form-group">
-                    <label>Title</label>
-                    <input type="text" id="lesson-title" required>
+                    <label>Lesson Title</label>
+                    <input type="text" id="create-lesson-title" required>
                 </div>
                 <div class="form-group">
                     <label>Difficulty</label>
@@ -176,28 +176,28 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>Description (HTML)</label>
-                    <textarea id="lesson-description" rows="4" required></textarea>
+                    <label>Lesson Description (HTML)</label>
+                    <textarea id="create-lesson-description" rows="4" required></textarea>
                 </div>
                 <div class="form-group">
                     <label>Starter Code</label>
-                    <textarea id="lesson-starter-code" rows="4" required></textarea>
+                    <textarea id="create-lesson-starter-code" rows="4" required></textarea>
                 </div>
                 <div class="form-group">
                     <label>Solution Code</label>
-                    <textarea id="lesson-solution" rows="4" required></textarea>
+                    <textarea id="create-lesson-solution" rows="4" required></textarea>
                 </div>
                 <div class="form-group">
                     <label>Points</label>
-                    <input type="number" id="lesson-points" value="100" min="1">
+                    <input type="number" id="create-lesson-points" value="100" min="1">
                 </div>
                 <div class="form-group">
                     <label>Hints (one per line)</label>
-                    <textarea id="lesson-hints" rows="3"></textarea>
+                    <textarea id="create-lesson-hints" rows="3"></textarea>
                 </div>
                 <div class="form-group">
                     <label>Test Cases (JSON format)</label>
-                    <textarea id="lesson-test-cases" rows="4" placeholder='[{"input": [1, 2], "expected": 3}]'></textarea>
+                    <textarea id="create-lesson-test-cases" rows="4" placeholder='[{"input": [1, 2], "expected": 3}]'></textarea>
                 </div>
                 <button type="submit" class="modal-btn">Create Lesson</button>
             </form>

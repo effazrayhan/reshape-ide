@@ -455,14 +455,14 @@ class LogicIDE {
     }
 
     async createLesson() {
-        const title = document.getElementById('lesson-title')?.value;
+        const title = document.getElementById('create-lesson-title')?.value;
         const difficulty = document.getElementById('lesson-difficulty')?.value;
-        const description = document.getElementById('lesson-description')?.value;
-        const starterCode = document.getElementById('lesson-starter-code')?.value;
-        const solution = document.getElementById('lesson-solution')?.value;
-        const points = parseInt(document.getElementById('lesson-points')?.value) || 100;
-        const hintsText = document.getElementById('lesson-hints')?.value;
-        const testCasesText = document.getElementById('lesson-test-cases')?.value;
+        const description = document.getElementById('create-lesson-description')?.value;
+        const starterCode = document.getElementById('create-lesson-starter-code')?.value;
+        const solution = document.getElementById('create-lesson-solution')?.value;
+        const points = parseInt(document.getElementById('create-lesson-points')?.value) || 100;
+        const hintsText = document.getElementById('create-lesson-hints')?.value;
+        const testCasesText = document.getElementById('create-lesson-test-cases')?.value;
         
         const hints = hintsText ? hintsText.split('\n').filter(h => h.trim()) : [];
         
