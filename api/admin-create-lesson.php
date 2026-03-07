@@ -1,16 +1,9 @@
 <?php
-/**
- * Project: Logic-Focused Educational IDE
- * File: api/admin-create-lesson.php
- * Description: Admin endpoint to create new lessons
- */
-
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
-// Handle preflight requests
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit;
@@ -19,7 +12,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 require_once 'lib/db.php';
 require_once 'lib/jwt.php';
 
-// Verify admin authentication
 $token = extractTokenFromHeader();
 if (!$token) {
     http_response_code(401);
@@ -34,7 +26,6 @@ if (!$payload || !isset($payload['is_admin']) || $payload['is_admin'] !== true) 
     exit;
 }
 
-// Get input data
 $input = json_decode(file_get_contents('php://input'), true);
 
 if (!$input) {
@@ -43,7 +34,6 @@ if (!$input) {
     exit;
 }
 
-// Validate required fields
 $title = trim($input['title'] ?? '');
 $difficulty = strtolower($input['difficulty'] ?? 'easy');
 $description = $input['description'] ?? '';
@@ -59,7 +49,6 @@ if (empty($title) || empty($description) || empty($starterCode) || empty($soluti
     exit;
 }
 
-// Validate difficulty
 if (!in_array($difficulty, ['easy', 'medium', 'hard'])) {
     http_response_code(400);
     echo json_encode(['success' => false, 'message' => 'Difficulty must be easy, medium, or hard']);
@@ -77,7 +66,6 @@ if ($pdo === null) {
 try {
     $pdo->beginTransaction();
     
-    // Insert lesson
     $stmt = $pdo->prepare("
         INSERT INTO lessons (title, difficulty, description, starter_code, solution, points)
         VALUES (?, ?, ?, ?, ?, ?)
@@ -86,7 +74,6 @@ try {
     $stmt->execute([$title, $difficulty, $description, $starterCode, $solution, $points]);
     $lessonId = (int)$pdo->lastInsertId();
     
-    // Insert hints
     if (!empty($hints)) {
         $hintStmt = $pdo->prepare("
             INSERT INTO hints (lesson_id, text, hint_order)
@@ -98,7 +85,6 @@ try {
         }
     }
     
-    // Insert test cases
     if (!empty($testCases)) {
         $testStmt = $pdo->prepare("
             INSERT INTO test_cases (lesson_id, input, expected_output)

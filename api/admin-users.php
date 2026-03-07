@@ -1,16 +1,9 @@
 <?php
-/**
- * Project: Logic-Focused Educational IDE
- * File: api/admin-users.php
- * Description: Admin endpoint to get all users and their progress
- */
-
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
-// Handle preflight requests
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit;
@@ -19,7 +12,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 require_once 'lib/db.php';
 require_once 'lib/jwt.php';
 
-// Verify admin authentication
 $token = extractTokenFromHeader();
 if (!$token) {
     http_response_code(401);
@@ -43,7 +35,6 @@ if ($pdo === null) {
 }
 
 try {
-    // Get all users with their scores
     $stmt = $pdo->query("
         SELECT 
             u.id,
@@ -60,7 +51,6 @@ try {
     
     $users = $stmt->fetchAll();
     
-    // Get lessons for each user
     $lessonsStmt = $pdo->query("SELECT id, title FROM lessons");
     $lessons = $lessonsStmt->fetchAll();
     $lessonTitles = [];
@@ -68,7 +58,6 @@ try {
         $lessonTitles[$lesson['id']] = $lesson['title'];
     }
     
-    // Get progress for all users
     $progressStmt = $pdo->query("
         SELECT user_id, lesson_id, score, completed_at 
         FROM user_progress 
@@ -76,7 +65,6 @@ try {
     ");
     $allProgress = $progressStmt->fetchAll();
     
-    // Organize progress by user
     $progressByUser = [];
     foreach ($allProgress as $progress) {
         $uid = $progress['user_id'];
@@ -91,7 +79,6 @@ try {
         ];
     }
     
-    // Build response
     $result = [];
     foreach ($users as $user) {
         $uid = (string)$user['id'];

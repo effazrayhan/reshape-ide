@@ -1,16 +1,9 @@
 <?php
-/**
- * Project: Logic-Focused Educational IDE
- * File: api/merge-progress.php
- * Description: Merge anonymous progress to authenticated user
- */
-
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
-// Handle preflight requests
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit;
@@ -19,7 +12,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 require_once 'lib/db.php';
 require_once 'lib/jwt.php';
 
-// Get authenticated user
 $token = extractTokenFromHeader();
 $payload = verifyJWT($token);
 
@@ -33,7 +25,6 @@ if (!$payload || !isset($payload['id'])) {
 
 $userId = (string)$payload['id'];
 
-// Get anonymous user ID from request
 $input = json_decode(file_get_contents('php://input'), true);
 $anonUserId = $input['anonymousUserId'] ?? null;
 
@@ -56,7 +47,6 @@ try {
         exit;
     }
     
-    // Get all progress from anonymous user
     $stmt = $pdo->prepare("
         SELECT lesson_id, score, hints_used, completed_at
         FROM user_progress
@@ -68,7 +58,6 @@ try {
     $merged = 0;
     
     foreach ($anonProgress as $progress) {
-        // Check if authenticated user already has progress for this lesson
         $checkStmt = $pdo->prepare("
             SELECT id, score FROM user_progress
             WHERE user_id = ? AND lesson_id = ?
@@ -77,7 +66,6 @@ try {
         $existing = $checkStmt->fetch();
         
         if ($existing) {
-            // Only update if new score is higher
             if ($progress['score'] > $existing['score']) {
                 $updateStmt = $pdo->prepare("
                     UPDATE user_progress
@@ -93,7 +81,6 @@ try {
                 $merged++;
             }
         } else {
-            // Insert new progress for authenticated user
             $insertStmt = $pdo->prepare("
                 INSERT INTO user_progress (user_id, lesson_id, score, hints_used, completed_at)
                 VALUES (?, ?, ?, ?, ?)
@@ -109,7 +96,6 @@ try {
         }
     }
     
-    // Update user_scores
     if ($merged > 0) {
         $scoreStmt = $pdo->prepare("
             SELECT SUM(score) as total_score, COUNT(*) as lessons_count

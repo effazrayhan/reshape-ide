@@ -1,16 +1,9 @@
 <?php
-/**
- * Project: Logic-Focused Educational IDE
- * File: api/admin-login.php
- * Description: Admin login endpoint
- */
-
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 
-// Handle preflight requests
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit;
@@ -19,7 +12,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 require_once 'lib/db.php';
 require_once 'lib/jwt.php';
 
-// Load env for admin credentials
 $adminEmail = getenv('ADMIN_EMAIL') ?: 'admin@reshape.com';
 $adminPassword = getenv('ADMIN_PASSWORD') ?: 'admin123';
 
@@ -34,9 +26,7 @@ if (!$input) {
 $email = $input['email'] ?? '';
 $password = $input['password'] ?? '';
 
-// Check admin credentials
 if ($email === $adminEmail && $password === $adminPassword) {
-    // Generate admin JWT token
     $token = generateJWT([
         'id' => 0,
         'email' => $adminEmail,

@@ -1,16 +1,9 @@
 <?php
-/**
- * Project: Logic-Focused Educational IDE
- * File: api/progress.php
- * Description: Get user progress for all lessons
- */
-
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
-// Handle preflight requests
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit;
@@ -19,10 +12,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 require_once 'lib/db.php';
 require_once 'lib/jwt.php';
 
-// Get user ID from JWT or session
 $userId = null;
 
-// Check for JWT token
 $token = extractTokenFromHeader();
 if ($token) {
     $payload = verifyJWT($token);
@@ -31,7 +22,6 @@ if ($token) {
     }
 }
 
-// If no JWT, check for anonymous user ID in POST body
 if (!$userId && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $input = json_decode(file_get_contents('php://input'), true);
     if (isset($input['anonymousUserId'])) {
@@ -39,7 +29,6 @@ if (!$userId && $_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Fallback to anonymous user
 if (!$userId) {
     if (!isset($_SESSION)) {
         session_start();
@@ -62,7 +51,6 @@ try {
         exit;
     }
     
-    // Get all completed lessons for this user
     $stmt = $pdo->prepare("
         SELECT lesson_id, score, hints_used, completed_at
         FROM user_progress
@@ -72,7 +60,6 @@ try {
     $stmt->execute([$userId]);
     $progress = $stmt->fetchAll();
     
-    // Convert to associative array by lesson_id
     $progressMap = [];
     foreach ($progress as $p) {
         $progressMap[$p['lesson_id']] = [

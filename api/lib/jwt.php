@@ -1,5 +1,4 @@
 <?php
-
 require_once __DIR__ . '/../../src/lib/Jwt.php';
 
 use App\Lib\Jwt as JwtLib;

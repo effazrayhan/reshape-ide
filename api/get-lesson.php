@@ -1,29 +1,20 @@
 <?php
-/**
- * Project: Logic-Focused Educational IDE
- * File: api/get-lesson.php
- * Description: API endpoint to fetch lessons
- */
-
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 
-// Handle preflight requests
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit;
 }
 
-// Include database helper
 require_once __DIR__ . '/lib/db.php';
 
 try {
     $pdo = getDB();
     
     if ($pdo === null) {
-        // Return demo lessons if database is not configured
         echo json_encode([
             'success' => true,
             'lessons' => getDemoLessons()
@@ -31,7 +22,6 @@ try {
         exit;
     }
     
-    // Fetch lessons from database
     $stmt = $pdo->prepare("
         SELECT 
             id,
@@ -49,7 +39,6 @@ try {
     $stmt->execute();
     $lessons = $stmt->fetchAll();
     
-    // Fetch hints for each lesson
     foreach ($lessons as &$lesson) {
         $hintStmt = $pdo->prepare("
             SELECT id, text, hint_order as hintOrder
@@ -60,7 +49,6 @@ try {
         $hintStmt->execute([$lesson['id']]);
         $lesson['hints'] = $hintStmt->fetchAll();
         
-        // Fetch test cases
         $testStmt = $pdo->prepare("
             SELECT 
                 input,
@@ -71,7 +59,6 @@ try {
         $testStmt->execute([$lesson['id']]);
         $lesson['testCases'] = $testStmt->fetchAll();
         
-        // Decode JSON fields
         if (!empty($lesson['testCases'])) {
             foreach ($lesson['testCases'] as &$test) {
                 $test['input'] = json_decode($test['input'], true);
@@ -85,16 +72,12 @@ try {
     ]);
     
 } catch (Exception $e) {
-    // Return demo lessons on error
     echo json_encode([
         'success' => true,
         'lessons' => getDemoLessons()
     ]);
 }
 
-/**
- * Get demo lessons for offline/development mode
- */
 function getDemoLessons() {
     return [
         [
@@ -118,7 +101,7 @@ function getDemoLessons() {
             'id' => 2,
             'title' => 'Sum Two Numbers',
             'difficulty' => 'easy',
-            'description' => '<h3>Adding Numbers</h3><p>Write a function that takes two numbers and returns their sum.</p><pre><code>function sum(a, b) {\n    // Your code here\n}</code></pre>',
+            'description' => '<h3>Adding Numbers</h3><p>Write a function that takes two numbers and returns their sum.</p>',
             'starterCode' => 'function sum(a, b) {\n    // Return a + b\n    \n}',
             'solution' => 'function sum(a, b) {\n    return a + b;\n}',
             'hints' => [
@@ -137,7 +120,7 @@ function getDemoLessons() {
             'id' => 3,
             'title' => 'Reverse a String',
             'difficulty' => 'medium',
-            'description' => '<h3>String Reversal</h3><p>Write a function that reverses a string.</p><pre><code>function reverse(str) {\n    // Your code here\n}</code></pre>',
+            'description' => '<h3>String Reversal</h3><p>Write a function that reverses a string.</p>',
             'starterCode' => 'function reverse(str) {\n    // Return the reversed string\n    \n}',
             'solution' => 'function reverse(str) {\n    return str.split("").reverse().join("");\n}',
             'hints' => [
@@ -147,8 +130,7 @@ function getDemoLessons() {
             ],
             'testCases' => [
                 ['input' => ['hello'], 'expected' => 'olleh'],
-                ['input' => ['JavaScript'], 'expected' => 'tpircSavaJ'],
-                ['input' => ['a'], 'expected' => 'a']
+                ['input' => ['JavaScript'], 'expected' => 'tpircSavaJ']
             ],
             'points' => 150
         ],
@@ -156,7 +138,7 @@ function getDemoLessons() {
             'id' => 4,
             'title' => 'FizzBuzz',
             'difficulty' => 'medium',
-            'description' => '<h3>The Classic Problem</h3><p>Write a function that takes a number and returns:</p><ul><li>"Fizz" if divisible by 3</li><li>"Buzz" if divisible by 5</li><li>"FizzBuzz" if divisible by both</li><li>The number as a string otherwise</li></ul><pre><code>function fizzBuzz(n) {\n    // Your code here\n}</code></pre>',
+            'description' => '<h3>The Classic Problem</h3><p>Write a function that takes a number and returns "Fizz", "Buzz", "FizzBuzz", or the number.</p>',
             'starterCode' => 'function fizzBuzz(n) {\n    // Your code here\n    \n}',
             'solution' => 'function fizzBuzz(n) {\n    if (n % 3 === 0 && n % 5 === 0) return "FizzBuzz";\n    if (n % 3 === 0) return "Fizz";\n    if (n % 5 === 0) return "Buzz";\n    return String(n);\n}',
             'hints' => [
@@ -176,7 +158,7 @@ function getDemoLessons() {
             'id' => 5,
             'title' => 'Factorial',
             'difficulty' => 'hard',
-            'description' => '<h3>Factorial Calculation</h3><p>Write a function that calculates the factorial of a non-negative integer.</p><pre><code>function factorial(n) {\n    // Your code here\n}</code></pre>',
+            'description' => '<h3>Factorial Calculation</h3><p>Write a function that calculates the factorial of a non-negative integer.</p>',
             'starterCode' => 'function factorial(n) {\n    // Return n! (n factorial)\n    \n}',
             'solution' => 'function factorial(n) {\n    if (n <= 1) return 1;\n    return n * factorial(n - 1);\n}',
             'hints' => [
@@ -186,7 +168,6 @@ function getDemoLessons() {
             ],
             'testCases' => [
                 ['input' => [0], 'expected' => 1],
-                ['input' => [1], 'expected' => 1],
                 ['input' => [5], 'expected' => 120],
                 ['input' => [10], 'expected' => 3628800]
             ],
