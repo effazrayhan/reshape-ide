@@ -40,14 +40,12 @@ try {
     $lessons = $stmt->fetchAll();
     
     foreach ($lessons as &$lesson) {
-        $hintStmt = $pdo->prepare("
-            SELECT id, text, hint_order as hintOrder
-            FROM hints
-            WHERE lesson_id = ?
-            ORDER BY hint_order ASC
-        ");
-        $hintStmt->execute([$lesson['id']]);
-        $lesson['hints'] = $hintStmt->fetchAll();
+        // Hints now come from Groq API - provide placeholder structure
+        $lesson['hints'] = [
+            ['id' => 1, 'hintOrder' => 1],
+            ['id' => 2, 'hintOrder' => 2],
+            ['id' => 3, 'hintOrder' => 3]
+        ];
         
         $testStmt = $pdo->prepare("
             SELECT 

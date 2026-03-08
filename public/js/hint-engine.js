@@ -1,16 +1,11 @@
-/**
- * Project: Logic-Focused Educational IDE
- * File: public/js/hint-engine.js
- * Description: Hint engine for providing contextual hints to users
- */
-
 class HintEngine {
     constructor() {
         this.hints = [];
         this.currentHintIndex = 0;
         this.maxHints = 3;
-        this.hintCost = 10; // Points deducted for using hints
+        this.hintCost = 10;
         this.isEnabled = false;
+        this.lessonId = 1;
         
         this.cacheElement = document.getElementById('hints-container');
         this.buttonElement = document.getElementById('get-hint-btn');
@@ -22,6 +17,10 @@ class HintEngine {
         if (this.buttonElement) {
             this.buttonElement.addEventListener('click', () => this.requestHint());
         }
+    }
+
+    setLessonId(lessonId) {
+        this.lessonId = lessonId || 1;
     }
 
     setHints(hints) {
@@ -44,15 +43,12 @@ class HintEngine {
 
         const hint = this.hints[this.currentHintIndex];
         
-        // Show loading state
         if (this.buttonElement) {
             this.buttonElement.textContent = 'Loading...';
             this.buttonElement.disabled = true;
         }
 
         try {
-            // In a real application, this would fetch from the server
-            // For now, we'll simulate with local hints
             await this.fetchHint(hint);
         } catch (error) {
             console.error('Error fetching hint:', error);
@@ -62,7 +58,6 @@ class HintEngine {
         this.currentHintIndex++;
         this.updateHintDisplay();
         
-        // Trigger score deduction event
         const event = new CustomEvent('hint:used', {
             detail: { cost: this.hintCost }
         });
@@ -70,7 +65,8 @@ class HintEngine {
     }
 
     async fetchHint(hint) {
-        const response = await fetch(`/api/get-hint.php?hint_id=${hint.id}`, {
+        const hintId = hint.id || (hint.hintOrder) || (this.currentHintIndex + 1);
+        const response = await fetch(`/api/get-hint.php?hint_id=${hintId}&lesson_id=${this.lessonId}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json'
@@ -92,20 +88,17 @@ class HintEngine {
     displayHint(text) {
         if (!this.cacheElement) return;
 
-        // Remove placeholder if present
         const placeholder = this.cacheElement.querySelector('.hint-placeholder');
         if (placeholder) {
             placeholder.remove();
         }
 
-        // Create hint element
         const hintDiv = document.createElement('div');
         hintDiv.className = 'hint-item';
         hintDiv.textContent = text;
 
         this.cacheElement.appendChild(hintDiv);
         
-        // Scroll to new hint
         hintDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
@@ -168,5 +161,4 @@ class HintEngine {
     }
 }
 
-// Export for use in other modules
 window.HintEngine = HintEngine;

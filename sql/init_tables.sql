@@ -13,18 +13,6 @@ CREATE TABLE IF NOT EXISTS lessons (
     INDEX idx_created_at (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Hints table
-CREATE TABLE IF NOT EXISTS hints (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    lesson_id INT NOT NULL,
-    text TEXT NOT NULL,
-    hint_order INT NOT NULL DEFAULT 1,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (lesson_id) REFERENCES lessons(id) ON DELETE CASCADE,
-    INDEX idx_lesson_id (lesson_id),
-    INDEX idx_hint_order (hint_order)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
 -- Test cases table
 CREATE TABLE IF NOT EXISTS test_cases (
     id INT AUTO_INCREMENT PRIMARY KEY,

@@ -1,9 +1,3 @@
-/**
- * Project: Logic-Focused Educational IDE
- * File: public/js/editor.js
- * Description: Code editor functionality for the Logic IDE
- */
-
 class CodeEditor {
     constructor(elementId) {
         this.editorElement = document.getElementById(elementId);
@@ -17,21 +11,18 @@ class CodeEditor {
     }
 
     initEditor() {
-        // Handle tab key for indentation
         this.editorElement.addEventListener('keydown', (e) => {
             if (e.key === 'Tab') {
                 e.preventDefault();
                 this.insertText('    ');
             }
             
-            // Ctrl/Cmd + Enter to run code
             if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
                 e.preventDefault();
                 const runEvent = new CustomEvent('editor:run');
                 this.editorElement.dispatchEvent(runEvent);
             }
             
-            // Ctrl/Cmd + S to save (prevent default save dialog)
             if ((e.ctrlKey || e.metaKey) && e.key === 's') {
                 e.preventDefault();
             }
@@ -45,7 +36,6 @@ class CodeEditor {
         
         this.editorElement.value = value.substring(0, start) + text + value.substring(end);
         
-        // Move cursor after inserted text
         this.editorElement.selectionStart = this.editorElement.selectionEnd = start + text.length;
         
         this.editorElement.focus();
@@ -80,5 +70,4 @@ class CodeEditor {
     }
 }
 
-// Export for use in other modules
 window.CodeEditor = CodeEditor;

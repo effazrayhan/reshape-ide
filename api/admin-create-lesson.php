@@ -40,7 +40,6 @@ $description = $input['description'] ?? '';
 $starterCode = $input['starterCode'] ?? '';
 $solution = $input['solution'] ?? '';
 $points = (int)($input['points'] ?? 100);
-$hints = $input['hints'] ?? [];
 $testCases = $input['testCases'] ?? [];
 
 if (empty($title) || empty($description) || empty($starterCode) || empty($solution)) {
@@ -73,17 +72,6 @@ try {
     
     $stmt->execute([$title, $difficulty, $description, $starterCode, $solution, $points]);
     $lessonId = (int)$pdo->lastInsertId();
-    
-    if (!empty($hints)) {
-        $hintStmt = $pdo->prepare("
-            INSERT INTO hints (lesson_id, text, hint_order)
-            VALUES (?, ?, ?)
-        ");
-        
-        foreach ($hints as $index => $hintText) {
-            $hintStmt->execute([$lessonId, $hintText, $index + 1]);
-        }
-    }
     
     if (!empty($testCases)) {
         $testStmt = $pdo->prepare("

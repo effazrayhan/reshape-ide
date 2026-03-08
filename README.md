@@ -105,8 +105,6 @@ reshape/
 ├── .env.example                # Environment variables template
 ├── .env.local                  # Local environment (gitignored)
 ├── router.php                  # PHP router for built-in server
-├── setup.sh                    # Linux/Mac setup script
-├── setup.bat                   # Windows setup script
 ├── run.sh                      # Run development server
 └── vercel.json                 # Vercel deployment config
 ```
@@ -303,5 +301,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🙏 Acknowledgments
 
 - Built with PHP and Vanilla JavaScript
-- Designed for educational purposes (jk I need marks :`)
+- Designed for educational purposes
 - Inspired by platforms like LeetCode and Codecademy

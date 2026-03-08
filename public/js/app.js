@@ -1,9 +1,3 @@
-/**
- * Project: Logic-Focused Educational IDE
- * File: public/js/app.js
- * Description: Main application logic for the Logic IDE
- */
-
 class LogicIDE {
     constructor() {
         this.currentLesson = null;
@@ -11,15 +5,12 @@ class LogicIDE {
         this.lessons = [];
         this.completedLessons = new Set();
         
-        // Authentication state
         this.currentUser = null;
         this.token = localStorage.getItem('jwt_token');
         
-        // Initialize components
         this.editor = null;
         this.hintEngine = null;
         
-        // DOM elements
         this.elements = {
             lessonList: document.getElementById('lessons-container'),
             lessonTitle: document.getElementById('lesson-title'),
@@ -61,7 +52,6 @@ class LogicIDE {
     }
 
     async init() {
-        // Wait for DOM to be ready
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => this.setupApp());
         } else {
@@ -70,60 +60,42 @@ class LogicIDE {
     }
 
     setupApp() {
-        // Initialize editor
         this.editor = new CodeEditor('code-editor');
-        
-        // Initialize hint engine
         this.hintEngine = new HintEngine();
-        
-        // Set up event listeners
         this.setupEventListeners();
-        
-        // Setup authentication
         this.setupAuth();
-        
-        // Load initial data
         this.loadLessons();
     }
 
     setupAuth() {
-        // Check if user is already logged in
         if (this.token) {
             this.fetchCurrentUser();
-            // Load progress will be called after user is fetched
         }
         
-        // Login button
         if (this.elements.loginBtn) {
             this.elements.loginBtn.addEventListener('click', () => this.showAuthModal('login'));
         }
         
-        // Signup button
         if (this.elements.signupBtn) {
             this.elements.signupBtn.addEventListener('click', () => this.showAuthModal('signup'));
         }
         
-        // Admin login button
         if (this.elements.adminLoginBtn) {
             this.elements.adminLoginBtn.addEventListener('click', () => this.showAdminLogin());
         }
         
-        // Admin nav button
         if (this.elements.adminNav) {
             this.elements.adminNav.addEventListener('click', () => this.showAdminPanel());
         }
         
-        // Logout button
         if (this.elements.logoutBtn) {
             this.elements.logoutBtn.addEventListener('click', () => this.logout());
         }
         
-        // Auth modal close
         if (this.elements.authModalClose) {
             this.elements.authModalClose.addEventListener('click', () => this.closeAuthModal());
         }
         
-        // Close auth modal on outside click
         if (this.elements.authModal) {
             this.elements.authModal.addEventListener('click', (e) => {
                 if (e.target === this.elements.authModal) {
@@ -132,7 +104,6 @@ class LogicIDE {
             });
         }
         
-        // Switch to signup
         if (this.elements.switchToSignup) {
             this.elements.switchToSignup.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -140,7 +111,6 @@ class LogicIDE {
             });
         }
         
-        // Switch to login
         if (this.elements.switchToLogin) {
             this.elements.switchToLogin.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -148,12 +118,10 @@ class LogicIDE {
             });
         }
         
-        // Login form submit
         if (this.elements.loginForm) {
             this.elements.loginForm.addEventListener('submit', (e) => this.handleLogin(e));
         }
         
-        // Signup form submit
         if (this.elements.signupForm) {
             this.elements.signupForm.addEventListener('submit', (e) => this.handleSignup(e));
         }
@@ -168,7 +136,6 @@ class LogicIDE {
     closeAuthModal() {
         if (!this.elements.authModal) return;
         this.elements.authModal.classList.remove('show');
-        // Clear forms and errors
         if (this.elements.loginForm) this.elements.loginForm.reset();
         if (this.elements.signupForm) this.elements.signupForm.reset();
         if (this.elements.loginError) this.elements.loginError.textContent = '';
@@ -210,9 +177,7 @@ class LogicIDE {
                 localStorage.setItem('jwt_token', this.token);
                 this.updateAuthUI();
                 this.closeAuthModal();
-                // Merge anonymous progress to user account
                 await this.mergeAnonymousProgress();
-                // Load user progress after login
                 await this.loadProgress();
             } else {
                 if (this.elements.loginError) {
@@ -229,11 +194,9 @@ class LogicIDE {
 
     async mergeAnonymousProgress() {
         try {
-            // Get anonymous session ID
             const anonId = this.getAnonymousUserId();
             if (!anonId) return;
             
-            // Call merge endpoint
             await fetch('/api/merge-progress.php', {
                 method: 'POST',
                 headers: { 
@@ -248,7 +211,6 @@ class LogicIDE {
     }
 
     getAnonymousUserId() {
-        // Get from sessionStorage or create new one
         let anonId = sessionStorage.getItem('anonymous_user_id');
         if (!anonId) {
             anonId = 'anon_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
@@ -289,7 +251,6 @@ class LogicIDE {
                 localStorage.setItem('jwt_token', this.token);
                 this.updateAuthUI();
                 this.closeAuthModal();
-                // Load user progress after signup
                 await this.loadProgress();
             } else {
                 if (this.elements.signupError) {
@@ -317,10 +278,8 @@ class LogicIDE {
                 if (data.success) {
                     this.currentUser = data.user;
                     this.updateAuthUI();
-                    // Load user progress
                     await this.loadProgress();
                 } else {
-                    // Token invalid, clear it
                     this.logout();
                 }
             } else {
@@ -328,7 +287,6 @@ class LogicIDE {
             }
         } catch (error) {
             console.error('Fetch user error:', error);
-            // Continue without auth on error
         }
     }
 
@@ -505,7 +463,6 @@ class LogicIDE {
             this.elements.userMenu.style.display = 'flex';
             this.elements.usernameDisplay.textContent = this.currentUser.username;
             
-            // Show admin nav if admin
             if (this.elements.adminNav) {
                 this.elements.adminNav.style.display = this.isAdmin ? 'block' : 'none';
             }
@@ -518,7 +475,6 @@ class LogicIDE {
         }
     }
 
-    // Helper method to make authenticated API requests
     async apiRequest(url, options = {}) {
         const headers = {
             'Content-Type': 'application/json',
@@ -535,42 +491,34 @@ class LogicIDE {
         });
     }
 
-    // Get user ID for progress (authenticated or anonymous)
     getProgressUserId() {
         if (this.currentUser) {
             return { id: this.currentUser.id, isAuthenticated: true };
         }
-        // Return anonymous ID from sessionStorage
         return { id: this.getAnonymousUserId(), isAuthenticated: false };
     }
 
     setupEventListeners() {
-        // Run button
         if (this.elements.runBtn) {
             this.elements.runBtn.addEventListener('click', () => this.runCode());
         }
         
-        // Reset button
         if (this.elements.resetBtn) {
             this.elements.resetBtn.addEventListener('click', () => this.resetCode());
         }
         
-        // Clear output button
         if (this.elements.clearOutputBtn) {
             this.elements.clearOutputBtn.addEventListener('click', () => this.clearOutput());
         }
         
-        // Modal close
         if (this.elements.modalClose) {
             this.elements.modalClose.addEventListener('click', () => this.closeModal());
         }
         
-        // Modal next button
         if (this.elements.modalNextBtn) {
             this.elements.modalNextBtn.addEventListener('click', () => this.goToNextLesson());
         }
         
-        // Close modal on outside click
         if (this.elements.modal) {
             this.elements.modal.addEventListener('click', (e) => {
                 if (e.target === this.elements.modal) {
@@ -579,12 +527,10 @@ class LogicIDE {
             });
         }
         
-        // Editor run event
         if (this.editor && this.editor.editorElement) {
             this.editor.editorElement.addEventListener('editor:run', () => this.runCode());
         }
         
-        // Hint used event
         document.addEventListener('hint:used', (e) => {
             this.updateScore(-e.detail.cost);
         });
@@ -602,10 +548,8 @@ class LogicIDE {
             this.lessons = data.lessons || [];
             this.renderLessonList();
             
-            // Load user progress
             await this.loadProgress();
             
-            // Select first lesson if available
             if (this.lessons.length > 0) {
                 this.selectLesson(this.lessons[0].id);
             }
@@ -617,7 +561,6 @@ class LogicIDE {
 
     async loadProgress() {
         try {
-            // If logged in, load authenticated progress
             if (this.currentUser) {
                 const response = await this.apiRequest('/api/progress.php');
                 const data = await response.json();
@@ -630,7 +573,6 @@ class LogicIDE {
                     }
                 }
             } else {
-                // Load anonymous progress from session
                 const anonId = this.getAnonymousUserId();
                 const response = await fetch('/api/progress.php', {
                     method: 'POST',
@@ -689,7 +631,6 @@ class LogicIDE {
         
         this.currentLesson = lesson;
         
-        // Update UI
         if (this.elements.lessonTitle) {
             this.elements.lessonTitle.textContent = lesson.title;
         }
@@ -703,21 +644,18 @@ class LogicIDE {
             this.elements.problemDescription.innerHTML = lesson.description;
         }
         
-        // Reset editor
         if (this.editor) {
             this.editor.setCode(lesson.starterCode || '');
         }
         
-        // Clear output
         this.clearOutput();
         
-        // Reset hints
         if (this.hintEngine) {
+            this.hintEngine.setLessonId(lesson.id);
             this.hintEngine.setHints(lesson.hints || []);
             this.hintEngine.enable(false);
         }
         
-        // Update lesson list UI
         this.renderLessonList();
     }
 
@@ -729,7 +667,6 @@ class LogicIDE {
         this.showOutput('Running...', '');
         
         try {
-            // Validate code against server
             const response = await this.apiRequest('/api/validate.php', {
                 method: 'POST',
                 body: JSON.stringify({
@@ -739,40 +676,63 @@ class LogicIDE {
                 })
             });
             
-            const result = await response.json();
+            const text = await response.text();
+            
+            if (!text || text.trim() === '') {
+                this.showOutput('Error: Empty response from server', 'error');
+                return;
+            }
+            
+            let result;
+            try {
+                result = JSON.parse(text);
+            } catch (e) {
+                this.showOutput('Error: Invalid JSON response\n' + text.substring(0, 200), 'error');
+                return;
+            }
             
             if (result.success) {
                 this.showOutput('✓ All tests passed!', 'success');
                 this.handleLessonComplete(result.score || this.currentLesson.points);
+            } else if (result.fallback) {
+                this.runClientSide(code);
             } else {
-                this.showOutput(`✗ ${result.message}`, 'error');
+                let output = `✗ ${result.message}\n\n`;
                 
-                // Enable hints after first failed attempt
+                if (result.results && result.results.length > 0) {
+                    output += 'Test Results:\n';
+                    result.results.forEach((r, i) => {
+                        const status = r.passed ? '✓' : '✗';
+                        const inputStr = JSON.stringify(r.input);
+                        output += `\n${status} Test ${i + 1}: Input(${inputStr})\n   Expected: ${r.expected}\n   Actual: ${r.actual || 'N/A'}`;
+                        if (r.error) {
+                            output += `\n   Error: ${r.error}`;
+                        }
+                    });
+                }
+                
+                this.showOutput(output, 'error');
+                
                 if (this.hintEngine && this.currentLesson.hints) {
                     this.hintEngine.enable(true);
                 }
             }
         } catch (error) {
             console.error('Validation error:', error);
-            
-            // Fallback to client-side evaluation for demo
-            this.runClientSide(code);
+            this.showOutput('Error: ' + error.message, 'error');
         }
     }
 
     runClientSide(code) {
         try {
-            // Create a sandboxed evaluation
             const testCases = this.currentLesson.testCases;
             let allPassed = true;
             let results = [];
             
             for (const testCase of testCases) {
                 try {
-                    // Create function from code
                     const func = new Function(code + `\nreturn ${this.currentLesson.solution.split('(')[0].replace('function ', '')};`);
                     
-                    // Get function name from solution
                     const funcName = this.currentLesson.solution.match(/function\s+(\w+)/)[1];
                     const userFunc = new Function(code + `\nreturn ${funcName};`);
                     
@@ -810,7 +770,6 @@ class LogicIDE {
                 const failedTests = results.filter(r => !r.passed);
                 this.showOutput(`✗ ${failedTests.length} test(s) failed`, 'error');
                 
-                // Enable hints after failed attempt
                 if (this.hintEngine && this.currentLesson.hints) {
                     this.hintEngine.enable(true);
                 }
@@ -823,23 +782,18 @@ class LogicIDE {
     handleLessonComplete(score) {
         if (!this.currentLesson) return;
         
-        // Mark lesson as complete
         this.completedLessons.add(this.currentLesson.id);
         
-        // Update score
         this.updateScore(score);
         
-        // Show success modal
         this.showModal(
             'Lesson Complete!',
             `You completed "${this.currentLesson.title}"`,
             score
         );
         
-        // Submit score to server
         this.submitScore(this.currentLesson.id, score);
         
-        // Update lesson list
         this.renderLessonList();
     }
 
