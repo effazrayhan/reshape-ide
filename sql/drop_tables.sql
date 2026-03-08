@@ -1,4 +1,4 @@
--- Drop all tables (hints now come from Groq API)
+-- Drop all tables
 
 USE reshape;
 

@@ -122,8 +122,7 @@ try {
             'message' => $result['message'],
             'results' => $result['results']
         ];
-        
-        // Pass fallback flag if Piston unavailable
+
         if (isset($result['fallback']) && $result['fallback']) {
             $response['fallback'] = true;
         }
@@ -202,8 +201,8 @@ function validateWithPiston($userCode, $testCases) {
             continue;
         }
         
-        $expectedStr = normalizeOutput(json_encode($expected));
-        $actualStr = normalizeOutput($actual);
+        $expectedStr = is_string($expected) ? $expected : json_encode($expected);
+        $actualStr = trim($actual);
         
         $passed = ($actualStr === $expectedStr);
         
@@ -315,11 +314,9 @@ function runPiston($code) {
     return ['output' => $stdout, 'error' => null];
 }
 
-function normalizeOutput($output) {
-    $output = trim($output);
-    $output = preg_replace('/^["\']|["\']$/', '', $output);
-    return $output;
-}
+    function normalizeOutput($output) {
+        return trim($output);
+    }
 
 function getDemoLessons() {
     return [
